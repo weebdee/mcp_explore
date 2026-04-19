@@ -31,7 +31,9 @@ class CommandAutoSuggest(AutoSuggest):
 
             if cmd in self.prompt_dict:
                 prompt = self.prompt_dict[cmd]
-                return Suggestion(f" {prompt.arguments[0].name}")
+                # FIX: Check if arguments exist before accessing index 0
+                if hasattr(prompt, "arguments") and prompt.arguments:
+                    return Suggestion(f" {prompt.arguments[0].name}")
 
         return None
 
@@ -98,14 +100,13 @@ class UnifiedCompleter(Completer):
             if len(parts) >= 2:
                 doc_prefix = parts[-1]
 
-                for resource in self.resources:
-                    if "id" in resource and resource["id"].lower().startswith(
-                        doc_prefix.lower()
-                    ):
+                # FIX: Treat self.resources as a list of strings, not dicts
+                for resource_id in self.resources:
+                    if resource_id.lower().startswith(doc_prefix.lower()):
                         yield Completion(
-                            resource["id"],
+                            resource_id,
                             start_position=-len(doc_prefix),
-                            display=resource["id"],
+                            display=resource_id,
                         )
                 return
 
@@ -117,7 +118,6 @@ class CliApp:
         self.prompts = []
 
         self.completer = UnifiedCompleter()
-
         self.command_autosuggester = CommandAutoSuggest([])
 
         self.kb = KeyBindings()
@@ -203,8 +203,9 @@ class CliApp:
                 if not user_input.strip():
                     continue
 
+                # The actual call to the base Chat class
                 response = await self.agent.run(user_input)
                 print(f"\nResponse:\n{response}")
 
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, EOFError): # FIX: Handle Ctrl+D cleanly
                 break

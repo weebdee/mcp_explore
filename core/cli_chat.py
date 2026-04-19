@@ -1,9 +1,8 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 from mcp.types import Prompt, PromptMessage
-from anthropic.types import MessageParam
 
 from core.chat import Chat
-from core.claude import Claude
+from core.deepseek import DeepSeek
 from mcp_client import MCPClient
 
 
@@ -12,9 +11,10 @@ class CliChat(Chat):
         self,
         doc_client: MCPClient,
         clients: dict[str, MCPClient],
-        claude_service: Claude,
+        deepseek_service: DeepSeek,
     ):
-        super().__init__(clients=clients, claude_service=claude_service)
+        # We pass it to the parent Chat class as a generic llm_service
+        super().__init__(clients=clients, llm_service=deepseek_service)
 
         self.doc_client: MCPClient = doc_client
 
@@ -90,8 +90,11 @@ class CliChat(Chat):
 
 
 def convert_prompt_message_to_message_param(
-    prompt_message: "PromptMessage",
-) -> MessageParam:
+    prompt_message: PromptMessage,
+) -> Dict[str, Any]:
+    """
+    Converts an MCP PromptMessage into a DeepSeek/OpenAI compatible message dictionary.
+    """
     role = "user" if prompt_message.role == "user" else "assistant"
 
     content = prompt_message.content
@@ -111,10 +114,10 @@ def convert_prompt_message_to_message_param(
             )
             return {"role": role, "content": content_text}
 
+    # If content is a list of blocks, extract text and join it into a single string
     if isinstance(content, list):
         text_blocks = []
         for item in content:
-            # Check if item is a dict-like object with a "type" field
             if isinstance(item, dict) or hasattr(item, "__dict__"):
                 item_type = (
                     item.get("type", None)
@@ -127,17 +130,17 @@ def convert_prompt_message_to_message_param(
                         if isinstance(item, dict)
                         else getattr(item, "text", "")
                     )
-                    text_blocks.append({"type": "text", "text": item_text})
+                    text_blocks.append(item_text)
 
         if text_blocks:
-            return {"role": role, "content": text_blocks}
+            return {"role": role, "content": "\n".join(text_blocks)}
 
     return {"role": role, "content": ""}
 
 
 def convert_prompt_messages_to_message_params(
     prompt_messages: List[PromptMessage],
-) -> List[MessageParam]:
+) -> List[Dict[str, Any]]:
     return [
         convert_prompt_message_to_message_param(msg) for msg in prompt_messages
     ]

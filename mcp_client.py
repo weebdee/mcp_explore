@@ -42,26 +42,37 @@ class MCPClient:
         return self._session
 
     async def list_tools(self) -> list[types.Tool]:
-        # TODO: Return a list of tools defined by the MCP server
-        return []
+        response = await self.session().list_tools()
+        return response.tools
 
     async def call_tool(
         self, tool_name: str, tool_input: dict
     ) -> types.CallToolResult | None:
-        # TODO: Call a particular tool and return the result
-        return None
+        response = await self.session().call_tool(tool_name, tool_input)
+        return response
 
     async def list_prompts(self) -> list[types.Prompt]:
-        # TODO: Return a list of prompts defined by the MCP server
-        return []
+        response = await self.session().list_prompts()
+        return response.prompts
 
-    async def get_prompt(self, prompt_name, args: dict[str, str]):
-        # TODO: Get a particular prompt defined by the MCP server
-        return []
+    async def get_prompt(self, prompt_name: str, args: dict[str, str]):
+        response = await self.session().get_prompt(prompt_name, arguments=args)
+        return response.messages
 
     async def read_resource(self, uri: str) -> Any:
-        # TODO: Read a resource, parse the contents and return it
-        return []
+        response = await self.session().read_resource(uri)
+        if response.contents:
+            content = response.contents[0]
+            # FastMCP usually returns TextResourceContents
+            if isinstance(content, types.TextResourceContents):
+                text = content.text
+                # A quick hack to ensure our UI gets a list when it asks for the document index
+                if uri == "docs://documents":
+                    return [doc_id.strip() for doc_id in text.split("\n") if doc_id.strip()]
+                return text
+            elif isinstance(content, types.BlobResourceContents):
+                return content.blob
+        return None
 
     async def cleanup(self):
         await self._exit_stack.aclose()
@@ -78,11 +89,11 @@ class MCPClient:
 # For testing
 async def main():
     async with MCPClient(
-        # If using Python without UV, update command to 'python' and remove "run" from args.
-        command="uv",
-        args=["run", "mcp_server.py"],
+        command="uv" if sys.platform != "win32" else "python",
+        args=["run", "mcp_server.py"] if sys.platform != "win32" else ["mcp_server.py"],
     ) as _client:
-        pass
+        tools = await _client.list_tools()
+        print(f"Connected successfully! Found tools: {[t.name for t in tools]}")
 
 
 if __name__ == "__main__":

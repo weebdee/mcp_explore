@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from contextlib import AsyncExitStack
 
 from mcp_client import MCPClient
+from core.deepseek import DeepSeek
 from core.claude import Claude
 
 from core.cli_chat import CliChat
@@ -13,18 +14,25 @@ from core.cli import CliApp
 load_dotenv()
 
 # Anthropic Config
-claude_model = os.getenv("CLAUDE_MODEL", "")
-anthropic_api_key = os.getenv("ANTHROPIC_API_KEY", "")
+#claude_model = os.getenv("CLAUDE_MODEL", "")
+#anthropic_api_key = os.getenv("ANTHROPIC_API_KEY", "")
+
+# DeepSeek Config
+deepseek_model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+deepseek_api_key = os.getenv("DEEPSEEK_API_KEY", "")
 
 
-assert claude_model, "Error: CLAUDE_MODEL cannot be empty. Update .env"
-assert anthropic_api_key, (
-    "Error: ANTHROPIC_API_KEY cannot be empty. Update .env"
-)
 
+#assert claude_model, "Error: CLAUDE_MODEL cannot be empty. Update .env"
+#assert anthropic_api_key, (
+#    "Error: ANTHROPIC_API_KEY cannot be empty. Update .env"
+#)
+assert deepseek_model, "Error: DEEPSEEK_MODEL cannot be empty. Update .env"
+assert deepseek_api_key, "Error: DEEPSEEK_API_KEY cannot be empty. Update .env"
 
 async def main():
-    claude_service = Claude(model=claude_model)
+    deepseek_service = DeepSeek(model=deepseek_model)
+    #claude_service = Claude(model=claude_model)
 
     server_scripts = sys.argv[1:]
     clients = {}
@@ -51,7 +59,8 @@ async def main():
         chat = CliChat(
             doc_client=doc_client,
             clients=clients,
-            claude_service=claude_service,
+            #claude_service=claude_service,
+            deepseek_service=deepseek_service,
         )
 
         cli = CliApp(chat)
