@@ -1,11 +1,11 @@
-# MCP Chat
-
+# MCP Chat (Deepseek Edition)
+This MCP chat was made based on the Anthropics course's example, it was adjusted to fit with DeepSeek API.
 MCP Chat is a command-line interface application that enables interactive chat capabilities with AI models through the Anthropic API. The application supports document retrieval, command-based prompts, and extensible tool integrations via the MCP (Model Control Protocol) architecture.
 
 ## Prerequisites
 
 - Python 3.9+
-- Anthropic API Key
+- LLM API Key
 
 ## Setup
 
@@ -92,20 +92,3 @@ Use the / prefix to execute commands defined in the MCP server:
 ```
 
 Commands will auto-complete when you press Tab.
-
-## Development
-
-### Adding New Documents
-
-Edit the `mcp_server.py` file to add new documents to the `docs` dictionary.
-
-### Implementing MCP Features
-
-To fully implement the MCP features:
-
-1. Complete the TODOs in `mcp_server.py`
-2. Implement the missing functionality in `mcp_client.py`
-
-### Linting and Typing Check
-
-There are no lint or type checks implemented.
